@@ -1,0 +1,135 @@
+.main-content { 
+  padding: 40px; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  background-color: #f8fafc;
+}
+
+.pagos-stats-container {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 1050px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  background: white;
+  flex: 1;
+  padding: 24px;
+  border-radius: 20px; 
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.stat-amount.success { color: #10b981; }
+.stat-amount.warning { color: #f59e0b; }
+.stat-amount.danger { color: #ef4444; }
+
+.table-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1050px;
+  margin-bottom: 20px;
+}
+
+.residentes-search-container {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.residentes-search-container input {
+  width: 100%;
+  padding: 12px 12px 12px 45px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #fff !important;
+  font-size: 14px;
+  outline: none;
+}
+
+.btn-add-pago {
+  background-color: #28a745; 
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0 4px 6px rgba(40, 167, 69, 0.15);
+}
+
+.btn-add-pago:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+}
+
+.residentes-card {
+  background: white;
+  width: 100%;
+  max-width: 1050px;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+}
+
+.monto { font-weight: 700; color: #1e293b; }
+
+.badge-pendiente {
+  background-color: #fff7ed;
+  color: #c2410c;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.actions { display: flex; gap: 8px; }
+
+.btn-action {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-view { background: #f1f5f9; color: #475569; border: none; }
+.btn-view:hover { background: #e2e8f0; }
+
+.btn-download { background: #6366f1; color: white; border: none; }
+.btn-download:hover { background: #4f46e5; }
+
+.btn-edit { background: #475569; color: white; border: none; } 
+.btn-edit:hover { background: #334155; }
+
+.btn-delete { 
+  background: white; 
+  color: #ef4444; 
+  border: 1px solid #fecaca; 
+} 
+.btn-delete:hover { background: #fef2f2; }
