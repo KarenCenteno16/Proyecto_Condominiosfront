@@ -1,49 +1,80 @@
-import { Home, Users, CreditCard, Key, MessageSquare, Menu, Gavel, ClipboardList } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Home, Users, CreditCard, Key, MessageSquare, Menu, Gavel, ClipboardList, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  const esAdmin = localStorage.getItem("rol") === "admin";
 
-  // funcion para determinar si la ruta esta activa
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
+
   const activeClass = (path) => (location.pathname === path ? "active" : "");
 
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <span className="hamburger">
-          <Menu size={20} />
-        </span>
+        <span className="hamburger"><Menu size={20} /></span>
         <div className="sidebar-title">Gestión de condominios</div>
       </div>
 
       <nav className="menu-list">
-        <Link to="/home" className={`menu-item ${activeClass("/home")}`}>
+        <Link 
+          to={esAdmin ? "/home" : "/inicio-usuario"} 
+          className={`menu-item ${activeClass(esAdmin ? "/home" : "/inicio-usuario")}`}
+        >
           <span className="menu-icon"><Home size={18} /></span> Home
         </Link>
 
-        <Link to="/residentes" className={`menu-item ${activeClass("/residentes")}`}>
-          <span className="menu-icon"><Users size={18} /></span> Residentes
-        </Link>
+        {esAdmin && (
+          <>
+            <Link to="/residentes" className={`menu-item ${activeClass("/residentes")}`}>
+              <span className="menu-icon"><Users size={18} /></span> Residentes
+            </Link>
 
-        <Link to="/pagos" className={`menu-item ${activeClass("/pagos")}`}>
-          <span className="menu-icon"><CreditCard size={18} /></span> Pagos
-        </Link>
+            <Link to="/pagos" className={`menu-item ${activeClass("/pagos")}`}>
+              <span className="menu-icon"><CreditCard size={18} /></span> Pagos
+            </Link>
 
-        <Link to="/accesos" className={`menu-item ${activeClass("/accesos")}`}>
-          <span className="menu-icon"><Key size={18} /></span> Accesos
-        </Link>
+            <Link to="/accesos" className={`menu-item ${activeClass("/accesos")}`}>
+              <span className="menu-icon"><Key size={18} /></span> Accesos
+            </Link>
+
+            <Link to="/asambleas" className={`menu-item ${activeClass("/asambleas")}`}>
+              <span className="menu-icon"><Gavel size={18} /></span> Asambleas
+            </Link>
+
+            <Link to="/reportes" className={`menu-item ${activeClass("/reportes")}`}>
+              <span className="menu-icon"><ClipboardList size={18} /></span> Reportes
+            </Link>
+          </>
+        )}
 
         <Link to="/chat" className={`menu-item ${activeClass("/chat")}`}>
           <span className="menu-icon"><MessageSquare size={18} /></span> Chat
         </Link>
 
-        <Link to="/asambleas" className={`menu-item ${activeClass("/asambleas")}`}>
-          <span className="menu-icon"><Gavel size={18} /></span> Asambleas
-        </Link>
-
-        <Link to="/reportes" className={`menu-item ${activeClass("/reportes")}`}>
-          <span className="menu-icon"><ClipboardList size={18} /></span> Reportes
-        </Link>
+        <button 
+          onClick={handleLogout} 
+          className="menu-item logout-btn" 
+          style={{
+            marginTop: 'auto', 
+            background: 'none', 
+            border: 'none', 
+            color: 'inherit', 
+            cursor: 'pointer', 
+            width: '100%', 
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '12px 20px'
+          }}
+        >
+          <span className="menu-icon"><LogOut size={18} /></span> Cerrar Sesión
+        </button>
       </nav>
     </aside>
   );

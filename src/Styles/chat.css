@@ -170,3 +170,12 @@
   background: #334155;
   transform: translateY(-1px);
 }
+
+
+
+.chat-container { display: flex; height: 80vh; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.chat-sidebar { width: 300px; border-right: 1px solid #eee; display: flex; flex-direction: column; }
+.contact-item.active { background-color: #f0fdf4; border-left: 4px solid #22c55e; }
+.message.sent { background-color: #22c55e; color: white; align-self: flex-end; border-radius: 12px 12px 0 12px; }
+.message.received { background-color: #f3f4f6; color: #374151; align-self: flex-start; border-radius: 12px 12px 12px 0; }
+.btn-send { background-color: #1e293b; color: white; padding: 10px 25px; border-radius: 8px; cursor: pointer; }
