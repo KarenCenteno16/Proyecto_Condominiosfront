@@ -1,13 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 
 export default function Login() {
   const [idPersona, setIdPersona] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,7 +20,12 @@ export default function Login() {
       if (res.data.res) {
         const user = res.data.usuario;
         
-        localStorage.setItem("userId", user.id_persona);
+        localStorage.clear(); 
+        if (window.Echo) {
+            window.Echo.disconnect(); 
+        }
+
+        localStorage.setItem("userId", user.id_persona); 
         
         const rolTexto = (user.admin === true || user.admin === 1 || user.admin === "1") 
           ? "admin" 
@@ -31,10 +34,11 @@ export default function Login() {
         localStorage.setItem("rol", rolTexto);
 
         if (rolTexto === "admin") {
-          navigate("/home"); 
+          window.location.href = "/home"; 
         } else {
-          navigate("/inicio-usuario"); 
+          window.location.href = "/inicio-usuario"; 
         }
+        
       } else {
         setError("Usuario o contraseña incorrectos.");
       }
@@ -48,7 +52,6 @@ export default function Login() {
     <div className="login-wrapper">
       <div className="login-card">
         <div className="logo">🏢</div> 
-        
         <h2>Iniciar Sesión</h2>
         
         <form onSubmit={handleLogin}>
@@ -63,8 +66,6 @@ export default function Login() {
             <input 
               type="text" 
               id="id_persona" 
-              name="id_persona"
-              placeholder="Ej: 1" 
               value={idPersona}
               onChange={(e) => setIdPersona(e.target.value)}
               required 
@@ -77,8 +78,6 @@ export default function Login() {
             <input 
               type="password" 
               id="pass" 
-              name="password"
-              placeholder="********" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required 

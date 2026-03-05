@@ -31,16 +31,18 @@ export default function AdminChat() {
   }, [deptoSeleccionado, miId]);
 
   useEffect(() => {
-    if (!deptoSeleccionado) return;
+    if (!miId || !window.Echo) return;
 
     const channel = window.Echo.channel('chat-canal')
       .listen('.NuevoMensaje', (data) => {
-        if (data.mensaje.destinatario == miId && data.mensaje.remitente == deptoSeleccionado.id) {
+        console.log("Admin recibió mensaje:", data);
+        
+        if (data.mensaje.destinatario == miId && deptoSeleccionado && data.mensaje.remitente == deptoSeleccionado.id) {
           setMensajes(prev => [...prev, { 
             id: data.mensaje.id, 
             texto: data.mensaje.mensaje, 
             tipo: "received", 
-            hora: "Ahora" 
+            hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }]);
         }
       });
@@ -52,16 +54,22 @@ export default function AdminChat() {
     e.preventDefault();
     if (!mensajeTexto.trim() || !deptoSeleccionado) return;
     
-    const texto = mensajeTexto;
-    setMensajes([...mensajes, { id: Date.now(), texto, tipo: "sent", hora: "Ahora" }]);
+    const textoActual = mensajeTexto;
     setMensajeTexto("");
 
     try {
       await axios.post("http://localhost:8000/api/enviar-mensaje", {
         remitente_id: miId, 
         destinatario_id: deptoSeleccionado.id, 
-        texto
+        texto: textoActual
       });
+
+      setMensajes(prev => [...prev, { 
+        id: Date.now(), 
+        texto: textoActual, 
+        tipo: "sent", 
+        hora: "Ahora" 
+      }]);
     } catch (error) {
       console.error("Error al enviar:", error.response?.data);
     }
@@ -80,10 +88,10 @@ export default function AdminChat() {
             <div key={d.id} 
                  className={`contact-item ${deptoSeleccionado?.id === d.id ? 'active' : ''}`}
                  onClick={() => setDeptoSeleccionado(d)}>
-              <div className="contact-avatar">{d.depa}</div>
+              <div className="contact-avatar">{d.depa || "U"}</div>
               <div className="contact-info">
                 <strong>Depto {d.depa}</strong>
-                <p>ID Persona: {d.id_persona}</p>
+                <p>Residente ID: {d.id_persona}</p>
               </div>
             </div>
           ))}

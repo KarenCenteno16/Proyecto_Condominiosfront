@@ -1,17 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import "../styles/chat.css"; // Reutilizamos estilos o crea uno nuevo
+import "../styles/chat.css";
 
 export default function InicioU() {
     const navigate = useNavigate();
     
-    // Recuperamos datos del localStorage que guardamos en el Login
     const userId = localStorage.getItem("userId");
     const rol = localStorage.getItem("rol");
 
     const handleLogout = () => {
         localStorage.clear();
-        navigate("/"); // Regresa al Login
+        navigate("/"); 
     };
 
     return (

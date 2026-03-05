@@ -15,6 +15,7 @@ import Reportes from "./pages/Reportes";
 // Páginas de Usuario
 import InicioU from "./pagesu/InicioU"; 
 import UserChat from "./pagesu/UserChat";
+import ReportesU from "./paginasusu/ReportesU";
 
 function App() {
   const [auth, setAuth] = useState({
@@ -71,6 +72,8 @@ function App() {
           {!esAdmin && auth.isLogged && (
             <>
               <Route path="/inicio-usuario" element={<InicioU />} />
+              <Route path="/chat-usuario" element={<UserChat />} />
+              <Route path="/reportes-usuario" element={<ReportesU />} />
             </>
           )}
           
