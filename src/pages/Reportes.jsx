@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import { Trash2, X, AlertCircle, CheckCircle, Clock, Edit } from "lucide-react";
+import { useState, useEffect, useTransition } from "react";
+import { Trash2, AlertCircle, CheckCircle, Clock, Edit, Loader2 } from "lucide-react";
 import axios from "axios";
+import Swal from "sweetalert2";
+import "animate.css"; // Para las transiciones de las alertas
 import "../styles/reportes.css";
 
 export default function Reportes() {
@@ -9,6 +11,9 @@ export default function Reportes() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  
+  // Hook de transición de React
+  const [isPending, startTransition] = useTransition();
   
   const miId = localStorage.getItem("userId");
 
@@ -26,41 +31,73 @@ export default function Reportes() {
       const res = await axios.get("http://localhost:8000/api/reportes");
       setReportes(res.data);
     } catch (err) {
-      console.error("Error 500 detectado:", err.response?.data);
+      console.error("Error al cargar:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenEdit = (r) => {
-    setEditMode(true);
-    setSelectedId(r.id);
-    setFormData({
-      categoria: r.categoria,
-      descripcion: r.descripcion,
-      estado: r.estado
+  // Función para mostrar alertas con transiciones
+  const showAlert = (title, text, icon) => {
+    Swal.fire({
+      title,
+      text,
+      icon,
+      showClass: { popup: 'animate__animated animate__fadeInUp animate__faster' },
+      hideClass: { popup: 'animate__animated animate__fadeOutDown animate__faster' },
+      confirmButtonColor: '#3b82f6',
     });
-    setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      if (editMode) {
-        await axios.put(`http://localhost:8000/api/reportes/${selectedId}`, formData);
-      } else {
-        await axios.post("http://localhost:8000/api/reportes", {
-          ...formData,
-          usuario_id: miId
-        });
+    
+    // Usamos startTransition para envolver la petición HTTP
+    startTransition(async () => {
+      try {
+        if (editMode) {
+          await axios.put(`http://localhost:8000/api/reportes/${selectedId}`, formData);
+        } else {
+          await axios.post("http://localhost:8000/api/reportes", {
+            ...formData,
+            usuario_id: miId
+          });
+        }
+        
+        setShowModal(false);
+        fetchReportes();
+        showAlert("¡Completado!", `El reporte ha sido ${editMode ? 'actualizado' : 'enviado'} con éxito.`, "success");
+      } catch (err) {
+        showAlert("Error", err.response?.data?.error || "Hubo un problema con la conexión", "error");
       }
-      setShowModal(false);
-      fetchReportes();
-    } catch (err) {
-      alert("Error en la operación: " + (err.response?.data?.error || "Intente de nuevo"));
-    }
+    });
   };
 
+  const handleDelete = (id) => {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Esta acción no se puede deshacer",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, borrar',
+      cancelButtonText: 'Cancelar',
+      showClass: { popup: 'animate__animated animate__zoomIn animate__faster' }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        startTransition(async () => {
+          try {
+            await axios.delete(`http://localhost:8000/api/reportes/${id}`);
+            fetchReportes();
+            showAlert("Eliminado", "El reporte ha sido borrado.", "success");
+          } catch (e) {
+            showAlert("Error", "No se pudo eliminar", "error");
+          }
+        });
+      }
+    });
+  };
+
+  // ... RenderEstado se mantiene igual ...
   const renderEstado = (estado) => {
     const estilos = {
       'Pendiente': { class: 'badge-pendiente', icon: <Clock size={12} /> },
@@ -82,13 +119,16 @@ export default function Reportes() {
           <h2 className="main-title">Reportes de Incidencias</h2>
           <p className="section-subtitle">Gestión Administrativa</p>
         </div>
-        <button className="btn-add-primary" onClick={() => { setEditMode(false); setFormData({categoria:"Mantenimiento", descripcion:"", estado:"Pendiente"}); setShowModal(true); }}>
+        <button 
+          className="btn-add-primary" 
+          onClick={() => { setEditMode(false); setFormData({categoria:"Mantenimiento", descripcion:"", estado:"Pendiente"}); setShowModal(true); }}
+        >
           + Crear Reporte
         </button>
       </div>
 
       <div className="residentes-card">
-        {loading ? <p className="text-center">Cargando...</p> : (
+        {loading ? <div className="loader-container"><Loader2 className="spinner" /> <p>Cargando reportes...</p></div> : (
           <table className="residentes-table">
             <thead>
               <tr>
@@ -101,7 +141,7 @@ export default function Reportes() {
             </thead>
             <tbody>
               {reportes.map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} className={isPending ? "row-pending" : ""}>
                   <td>
                     <strong>{r.usuario_nombre}</strong>
                     <div className="text-muted" style={{fontSize: '12px'}}>Depa: {r.departamento || 'N/A'}</div>
@@ -110,10 +150,10 @@ export default function Reportes() {
                   <td>{r.descripcion.substring(0, 30)}...</td>
                   <td>{renderEstado(r.estado)}</td>
                   <td className="text-center">
-                    <button className="btn-edit" onClick={() => handleOpenEdit(r)} style={{marginRight: '8px'}}>
+                    <button className="btn-edit" onClick={() => {setSelectedId(r.id); setEditMode(true); setFormData({categoria: r.categoria, descripcion: r.descripcion, estado: r.estado}); setShowModal(true);}} style={{marginRight: '8px'}}>
                       <Edit size={16} />
                     </button>
-                    <button className="btn-delete" onClick={async () => { if(window.confirm("¿Borrar?")) { await axios.delete(`http://localhost:8000/api/reportes/${r.id}`); fetchReportes(); } }}>
+                    <button className="btn-delete" onClick={() => handleDelete(r.id)} disabled={isPending}>
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -125,10 +165,11 @@ export default function Reportes() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay animate__animated animate__fadeIn">
+          <div className="modal-content animate__animated animate__zoomIn animate__faster">
             <h3 className="modal-title-dark">{editMode ? "Editar Incidencia" : "Nuevo Reporte"}</h3>
             <form onSubmit={handleSubmit} className="modal-form">
+              {/* Selects y Textarea se mantienen igual */}
               <label className="section-subtitle">Categoría</label>
               <select className="modal-input" value={formData.categoria} onChange={(e)=>setFormData({...formData, categoria: e.target.value})}>
                 <option value="Mantenimiento">Mantenimiento</option>
@@ -151,8 +192,12 @@ export default function Reportes() {
               <textarea className="modal-input modal-textarea" value={formData.descripcion} onChange={(e)=>setFormData({...formData, descripcion: e.target.value})} required />
 
               <div className="modal-actions-centered">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="submit" className="btn-save">{editMode ? "Guardar Cambios" : "Enviar"}</button>
+                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)} disabled={isPending}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-save" disabled={isPending}>
+                  {isPending ? <Loader2 className="spinner-small" /> : (editMode ? "Guardar" : "Enviar")}
+                </button>
               </div>
             </form>
           </div>

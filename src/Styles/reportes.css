@@ -373,3 +373,45 @@
   text-transform: uppercase;
   color: #475569;
 }
+
+/* Animación del Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+  color: #3b82f6;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Efecto de fila en espera */
+.row-pending {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Contenedor de carga inicial */
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  gap: 15px;
+}
+
+/* Mejora al botón mientras carga */
+.btn-save:disabled {
+  background-color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}

@@ -171,6 +171,56 @@
   transform: translateY(-1px);
 }
 
+/* Animación de entrada de mensajes */
+.message {
+    max-width: 70%;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: 18px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Estilo para mensaje pendiente de envío */
+.pending-msg {
+    opacity: 0.7;
+    font-style: italic;
+    background-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+
+/* Spinner dentro del botón de enviar */
+.spinner-chat {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Scroll suave y contenedor */
+.chat-messages {
+    scroll-behavior: smooth;
+    overflow-y: auto;
+}
+
+/* Mejoras al botón de envío */
+.btn-send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s active;
+}
+
+.btn-send:active {
+    transform: scale(0.9);
+}
+
+.btn-send:disabled {
+    background-color: #cbd5e1;
+    cursor: not-allowed;
+}
 
 
 .chat-container { display: flex; height: 80vh; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }

@@ -1,13 +1,17 @@
-
-import { useState, useEffect } from "react";
-import { Trash2, X, AlertCircle, CheckCircle, Clock, Plus } from "lucide-react";
+import { useState, useEffect, useTransition } from "react";
+import { Trash2, X, AlertCircle, CheckCircle, Clock, Plus, Loader2 } from "lucide-react";
 import axios from "axios";
+import Swal from "sweetalert2";
+import "animate.css";
 import "../styles/reportes.css";
 
 export default function ReportesU() {
   const [reportes, setReportes] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // Hook para gestionar transiciones de UI
+  const [isPending, startTransition] = useTransition();
   
   const miId = localStorage.getItem("userId");
 
@@ -23,7 +27,6 @@ export default function ReportesU() {
   const fetchReportesUsuario = async () => {
     try {
       setLoading(true);
-      // Llamamos a la nueva ruta filtrada por ID
       const res = await axios.get(`http://localhost:8000/api/reportes/usuario/${miId}`);
       setReportes(res.data);
     } catch (err) {
@@ -33,21 +36,67 @@ export default function ReportesU() {
     }
   };
 
+  // Función de alerta reutilizable con transiciones
+  const notify = (title, icon, text = "") => {
+    Swal.fire({
+      title,
+      text,
+      icon,
+      timer: 2500,
+      showConfirmButton: false,
+      showClass: { popup: 'animate__animated animate__fadeInRight' },
+      hideClass: { popup: 'animate__animated animate__fadeOutRight' },
+      toast: true,
+      position: 'top-end'
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await axios.post("http://localhost:8000/api/reportes", {
-        usuario_id: miId,
-        categoria: formData.categoria,
-        descripcion: formData.descripcion,
-        estado: "Pendiente" // Por defecto siempre inicia en Pendiente
-      });
-      setShowModal(false);
-      setFormData({ categoria: "Mantenimiento", descripcion: "" });
-      fetchReportesUsuario();
-    } catch (err) {
-      alert("Error al enviar el reporte");
-    }
+    
+    // Iniciamos la transición para el estado de "Enviando..."
+    startTransition(async () => {
+      try {
+        await axios.post("http://localhost:8000/api/reportes", {
+          usuario_id: miId,
+          categoria: formData.categoria,
+          descripcion: formData.descripcion,
+          estado: "Pendiente"
+        });
+
+        setShowModal(false);
+        setFormData({ categoria: "Mantenimiento", descripcion: "" });
+        fetchReportesUsuario();
+        notify("Reporte Enviado", "success", "La administración lo revisará pronto.");
+      } catch (err) {
+        notify("Error", "error", "No se pudo enviar el reporte.");
+      }
+    });
+  };
+
+  const handleCancelReport = (id) => {
+    Swal.fire({
+      title: '¿Cancelar reporte?',
+      text: "Se eliminará la solicitud de mantenimiento.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'No, mantener',
+      showClass: { popup: 'animate__animated animate__headShake' }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        startTransition(async () => {
+          try {
+            await axios.delete(`http://localhost:8000/api/reportes/${id}`);
+            fetchReportesUsuario();
+            notify("Reporte Cancelado", "success");
+          } catch (err) {
+            notify("Error", "error", "No se pudo cancelar.");
+          }
+        });
+      }
+    });
   };
 
   const renderEstado = (estado) => {
@@ -78,9 +127,12 @@ export default function ReportesU() {
 
       <div className="residentes-card">
         {loading ? (
-          <p className="text-center p-4">Cargando tus reportes...</p>
+          <div className="loader-container">
+            <Loader2 className="spinner" size={40} />
+            <p>Cargando tus reportes...</p>
+          </div>
         ) : (
-          <table className="residentes-table">
+          <table className={`residentes-table ${isPending ? 'table-loading' : ''}`}>
             <thead>
               <tr>
                 <th>FECHA</th>
@@ -95,7 +147,7 @@ export default function ReportesU() {
                 <tr><td colSpan="5" className="text-center">Aún no has realizado ningún reporte.</td></tr>
               ) : (
                 reportes.map((r) => (
-                  <tr key={r.id}>
+                  <tr key={r.id} className="animate__animated animate__fadeIn">
                     <td>{new Date(r.created_at).toLocaleDateString()}</td>
                     <td><span className="cat-tag">{r.categoria}</span></td>
                     <td className="desc-cell" title={r.descripcion}>
@@ -104,12 +156,11 @@ export default function ReportesU() {
                     <td>{renderEstado(r.estado)}</td>
                     <td className="text-center">
                       {r.estado === "Pendiente" ? (
-                        <button className="btn-delete-icon" onClick={async () => {
-                          if(window.confirm("¿Deseas cancelar este reporte?")) {
-                            await axios.delete(`http://localhost:8000/api/reportes/${r.id}`);
-                            fetchReportesUsuario();
-                          }
-                        }}>
+                        <button 
+                          className="btn-delete-icon" 
+                          disabled={isPending}
+                          onClick={() => handleCancelReport(r.id)}
+                        >
                           <Trash2 size={18} />
                         </button>
                       ) : (
@@ -125,8 +176,8 @@ export default function ReportesU() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay animate__animated animate__fadeIn">
+          <div className="modal-content animate__animated animate__zoomIn animate__faster">
             <div className="modal-header">
               <h3 className="modal-title-dark">Crear Nueva Incidencia</h3>
               <button className="close-x" onClick={() => setShowModal(false)}><X size={20} /></button>
@@ -137,6 +188,7 @@ export default function ReportesU() {
                 <select 
                   className="modal-input"
                   value={formData.categoria}
+                  disabled={isPending}
                   onChange={(e) => setFormData({...formData, categoria: e.target.value})}
                 >
                   <option value="Mantenimiento">Mantenimiento</option>
@@ -152,14 +204,21 @@ export default function ReportesU() {
                   className="modal-input modal-textarea" 
                   value={formData.descripcion}
                   required
+                  disabled={isPending}
                   placeholder="Ej: El foco del pasillo 3 no enciende..."
                   onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
                 ></textarea>
               </div>
               
               <div className="modal-actions-centered">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="submit" className="btn-add-primary">Enviar a Administración</button>
+                <button type="button" className="btn-cancel" disabled={isPending} onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="submit" className="btn-add-primary" disabled={isPending}>
+                  {isPending ? (
+                    <><Loader2 className="spinner-small" size={16} /> Enviando...</>
+                  ) : (
+                    "Enviar a Administración"
+                  )}
+                </button>
               </div>
             </form>
           </div>

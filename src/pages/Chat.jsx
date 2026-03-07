@@ -1,5 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
+import { Send, Loader2 } from "lucide-react";
+import "animate.css";
 import "../styles/chat.css";
 
 export default function AdminChat() {
@@ -9,6 +12,9 @@ export default function AdminChat() {
   const [deptoSeleccionado, setDeptoSeleccionado] = useState(null);
   const scrollRef = useRef(null);
   const miId = localStorage.getItem("userId");
+
+  // Hook de transición
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     axios.get("http://localhost:8000/api/usuarios-chat").then(res => {
@@ -35,8 +41,6 @@ export default function AdminChat() {
 
     const channel = window.Echo.channel('chat-canal')
       .listen('.NuevoMensaje', (data) => {
-        console.log("Admin recibió mensaje:", data);
-        
         if (data.mensaje.destinatario == miId && deptoSeleccionado && data.mensaje.remitente == deptoSeleccionado.id) {
           setMensajes(prev => [...prev, { 
             id: data.mensaje.id, 
@@ -55,24 +59,38 @@ export default function AdminChat() {
     if (!mensajeTexto.trim() || !deptoSeleccionado) return;
     
     const textoActual = mensajeTexto;
-    setMensajeTexto("");
+    const temporalId = Date.now();
+    setMensajeTexto(""); // Limpiamos input de inmediato (Optimistic UI)
 
-    try {
-      await axios.post("http://localhost:8000/api/enviar-mensaje", {
-        remitente_id: miId, 
-        destinatario_id: deptoSeleccionado.id, 
-        texto: textoActual
-      });
+    // Envolvemos la petición en startTransition
+    startTransition(async () => {
+      try {
+        await axios.post("http://localhost:8000/api/enviar-mensaje", {
+          remitente_id: miId, 
+          destinatario_id: deptoSeleccionado.id, 
+          texto: textoActual
+        });
 
-      setMensajes(prev => [...prev, { 
-        id: Date.now(), 
-        texto: textoActual, 
-        tipo: "sent", 
-        hora: "Ahora" 
-      }]);
-    } catch (error) {
-      console.error("Error al enviar:", error.response?.data);
-    }
+        setMensajes(prev => [...prev, { 
+          id: temporalId, 
+          texto: textoActual, 
+          tipo: "sent", 
+          hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: 'success'
+        }]);
+      } catch (error) {
+        // Si falla, mostramos alerta discreta y devolvemos el texto al input
+        setMensajeTexto(textoActual);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'error',
+          title: 'No se pudo enviar el mensaje',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      }
+    });
   };
 
   useEffect(() => {
@@ -80,7 +98,7 @@ export default function AdminChat() {
   }, [mensajes]);
 
   return (
-    <div className="chat-container">
+    <div className="chat-container animate__animated animate__fadeIn">
       <div className="chat-sidebar">
         <div className="chat-header-side">Departamentos</div>
         <div className="contact-list">
@@ -97,22 +115,39 @@ export default function AdminChat() {
           ))}
         </div>
       </div>
+      
       <div className="chat-window">
         <div className="chat-header">
           <h3>{deptoSeleccionado ? `Chat con Depto ${deptoSeleccionado.depa}` : "Seleccione un residente"}</h3>
         </div>
+        
         <div className="chat-messages">
           {mensajes.map(m => (
-            <div key={m.id} className={`message ${m.tipo}`}>
+            <div key={m.id} className={`message ${m.tipo} animate__animated animate__fadeInUp animate__faster`}>
               <p>{m.texto}</p>
               <span>{m.hora}</span>
             </div>
           ))}
+          {/* Indicador de carga si la transición está pendiente */}
+          {isPending && (
+            <div className="message sent pending-msg">
+              <p>Enviando...</p>
+            </div>
+          )}
           <div ref={scrollRef} />
         </div>
+
         <form className="chat-input-area" onSubmit={enviar}>
-          <input type="text" value={mensajeTexto} onChange={e => setMensajeTexto(e.target.value)} placeholder="Responder..." />
-          <button type="submit" className="btn-send">Enviar</button>
+          <input 
+            type="text" 
+            value={mensajeTexto} 
+            onChange={e => setMensajeTexto(e.target.value)} 
+            placeholder="Responder..." 
+            disabled={!deptoSeleccionado}
+          />
+          <button type="submit" className="btn-send" disabled={isPending || !deptoSeleccionado}>
+            {isPending ? <Loader2 className="spinner-chat" size={18} /> : <Send size={18} />}
+          </button>
         </form>
       </div>
     </div>
