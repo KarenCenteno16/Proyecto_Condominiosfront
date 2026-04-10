@@ -16,6 +16,8 @@ import Reportes from "./pages/Reportes";
 import InicioU from "./pagesu/InicioU"; 
 import UserChat from "./pagesu/UserChat";
 import ReportesU from "./paginasusu/ReportesU";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 
 function App() {
   const [auth, setAuth] = useState({
@@ -30,56 +32,50 @@ function App() {
     });
   };
 
-  useEffect(() => {
-    const handleStorageChange = () => refreshAuth();
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  const esAdmin = auth.rol === "admin";
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route 
-          path="/" 
-          element={
-            auth.isLogged ? (
-              esAdmin ? <Navigate to="/home" replace /> : <Navigate to="/inicio-usuario" replace />
-            ) : (
-              <Login onLoginSuccess={refreshAuth} />
-            )
-          } 
-        />
-
+        {/* RUTAS PÚBLICAS */}
+        <Route path="/" element={<Login onLoginSuccess={refreshAuth} />} />
         <Route path="/register" element={<Register />} />
-        
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        <Route element={<Layout />}>
-          {/* Rutas de Administrador */}
-          <Route path="/home" element={auth.isLogged && esAdmin ? <Home /> : <Navigate to="/" replace />} />
-          <Route path="/residentes" element={auth.isLogged && esAdmin ? <Residentes /> : <Navigate to="/" replace />} />
-          <Route path="/pagos" element={auth.isLogged && esAdmin ? <Pagos /> : <Navigate to="/" replace />} />
-          <Route path="/accesos" element={auth.isLogged && esAdmin ? <Accesos /> : <Navigate to="/" replace />} />
-          <Route path="/asambleas" element={auth.isLogged && esAdmin ? <Asambleas /> : <Navigate to="/" replace />} />
-          <Route path="/reportes" element={auth.isLogged && esAdmin ? <Reportes /> : <Navigate to="/" replace />} />
-          
-          {/* Rutas de Residente */}
-          <Route path="/inicio-usuario" element={auth.isLogged && !esAdmin ? <InicioU /> : <Navigate to="/" replace />} />
-          <Route path="/reportes-usuario" element={auth.isLogged && !esAdmin ? <ReportesU /> : <Navigate to="/" replace />} />
-          
-          {/* Chat */}
-          <Route 
-            path="/chat" 
-            element={auth.isLogged ? (esAdmin ? <ChatAdmin /> : <UserChat />) : <Navigate to="/" replace />} 
-          />
+        {/* RUTAS DE ADMINISTRADOR (Middleware: isLogged + rol admin) */}
+        <Route element={
+            <ProtectedRoute 
+                isAllowed={auth.isLogged && auth.rol === 'admin'} 
+                redirectTo="/" 
+            />
+        }>
+            <Route element={<Layout />}>
+                <Route path="/home" element={<Home />} />
+                <Route path="/residentes" element={<Residentes />} />
+                <Route path="/pagos" element={<Pagos />} />
+                <Route path="/accesos" element={<Accesos />} />
+                <Route path="/asambleas" element={<Asambleas />} />
+                <Route path="/reportes" element={<Reportes />} />
+                <Route path="/chat" element={<ChatAdmin />} />
+            </Route>
+        </Route>
+
+        {/* RUTAS DE RESIDENTE (Middleware: isLogged + rol residente) */}
+        <Route element={
+            <ProtectedRoute 
+                isAllowed={auth.isLogged && auth.rol === 'residente'} 
+                redirectTo="/" 
+            />
+        }>
+            <Route element={<Layout />}>
+                <Route path="/inicio-usuario" element={<InicioU />} />
+                <Route path="/reportes-usuario" element={<ReportesU />} />
+                <Route path="/chat-usuario" element={<UserChat />} />
+            </Route>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
-}
 
-export default App;
+  
+} export default App;
