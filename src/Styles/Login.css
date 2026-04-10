@@ -71,3 +71,29 @@ html, body, #root {
 .btn-login:hover {
   background: #1d4ed8;
 }
+
+.login-footer {
+  margin-top: 20px;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 15px;
+}
+
+.login-footer p {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.link-register {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.link-register:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}

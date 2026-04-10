@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 
 // Páginas de Administrador
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Residentes from "./pages/Residentes";
 import Pagos from "./pages/Pagos";
@@ -19,18 +20,20 @@ import ReportesU from "./paginasusu/ReportesU";
 
 function App() {
   const [auth, setAuth] = useState({
-    isLogged: !!localStorage.getItem("userId"),
+    isLogged: !!localStorage.getItem("token"),
     rol: localStorage.getItem("rol")
   });
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setAuth({
-        isLogged: !!localStorage.getItem("userId"),
-        rol: localStorage.getItem("rol")
-      });
-    };
+  // Función para forzar la actualización del estado de autenticación
+  const refreshAuth = () => {
+    setAuth({
+      isLogged: !!localStorage.getItem("token"),
+      rol: localStorage.getItem("rol")
+    });
+  };
 
+  useEffect(() => {
+    const handleStorageChange = () => refreshAuth();
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
@@ -40,19 +43,25 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* LOGIN: Le pasamos la función refreshAuth como prop */}
         <Route 
           path="/" 
           element={
             auth.isLogged ? (
-              esAdmin ? <Navigate to="/home" /> : <Navigate to="/inicio-usuario" />
+              esAdmin ? <Navigate to="/home" replace /> : <Navigate to="/inicio-usuario" replace />
             ) : (
-              <Login />
+              <Login onLoginSuccess={refreshAuth} />
             )
           } 
         />
 
+        <Route 
+          path="/register" 
+          element={auth.isLogged ? <Navigate to="/" replace /> : <Register />} 
+        />
+
+        {/* RUTAS PROTEGIDAS */}
         <Route element={<Layout />}>
-          
           <Route 
             path="/chat" 
             element={esAdmin ? <ChatAdmin /> : <UserChat />} 
@@ -76,10 +85,9 @@ function App() {
               <Route path="/reportes-usuario" element={<ReportesU />} />
             </>
           )}
-          
         </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -14,20 +14,25 @@ import { Link, useLocation } from "react-router-dom";
 export default function Sidebar() {
   const location = useLocation();
   
-  const rol = localStorage.getItem("rol")?.toLowerCase();
+  // Obtenemos el rol asegurándonos de limpiar espacios o nulos
+  const rol = localStorage.getItem("rol")?.toLowerCase().trim();
   const esAdmin = rol === "admin";
 
   const handleLogout = () => {
+    // 1. Limpiamos todo el almacenamiento local
     localStorage.clear();
 
+    // 2. Desconectamos Echo si existe (importante para no dejar sockets abiertos)
     if (window.Echo) {
       console.log("Desconectando WebSockets...");
       window.Echo.disconnect();
     }
 
+    // 3. Redirección forzada al login (esto limpia el estado de App.jsx)
     window.location.href = "/";
   };
 
+  // Función para marcar el link como activo
   const activeClass = (path) => (location.pathname === path ? "active" : "");
 
   return (
@@ -38,6 +43,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="menu-list">
+        {/* HOME DINÁMICO */}
         <Link 
           to={esAdmin ? "/home" : "/inicio-usuario"} 
           className={`menu-item ${activeClass(esAdmin ? "/home" : "/inicio-usuario")}`}
@@ -45,6 +51,7 @@ export default function Sidebar() {
           <span className="menu-icon"><Home size={18} /></span> Home
         </Link>
 
+        {/* MENÚ PARA ADMINISTRADOR */}
         {esAdmin && (
           <>
             <Link to="/residentes" className={`menu-item ${activeClass("/residentes")}`}>
@@ -73,6 +80,7 @@ export default function Sidebar() {
           </>
         )}
 
+        {/* MENÚ PARA RESIDENTE (Usuario común) */}
         {!esAdmin && (
           <>
             <Link 
@@ -91,11 +99,12 @@ export default function Sidebar() {
           </>
         )}
 
+        {/* BOTÓN DE CIERRE DE SESIÓN */}
         <button 
           onClick={handleLogout} 
           className="menu-item logout-btn" 
           style={{
-            marginTop: 'auto', 
+            marginTop: 'auto', // Empuja el botón al fondo si el sidebar es flex
             background: 'none', 
             border: 'none', 
             color: 'inherit', 
