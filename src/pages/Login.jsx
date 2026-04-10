@@ -38,40 +38,51 @@ export default function Login({ onLoginSuccess }) {
       if (res.data.res) {
         const { usuario, token } = res.data;
         
+        // 1. Guardar credenciales básicas
         localStorage.setItem("token", token);
         localStorage.setItem("userId", usuario.id_persona);
 
-        // Lógica de rol
+        // 2. Lógica de rol robusta (maneja booleanos, números y strings de Postgres)
         const esAdminReal = 
           usuario.admin === true || 
           usuario.admin === 1 || 
           String(usuario.admin) === "1" || 
-          String(usuario.admin).toLowerCase() === "true";
+          String(usuario.admin).toLowerCase() === "true" ||
+          String(usuario.admin).toLowerCase() === "t";
 
         const rolTexto = esAdminReal ? "admin" : "residente";
         localStorage.setItem("rol", rolTexto);
 
+        // 3. Configurar Axios para futuras peticiones
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
+        // 4. Actualizar estado global en App.jsx
         if (onLoginSuccess) onLoginSuccess();
 
+        // 5. Alerta y Redirección
         Swal.fire({
           icon: 'success',
           title: 'Bienvenido',
           text: `Sesión iniciada como ${rolTexto}`,
           timer: 1500,
           showConfirmButton: false
+        }).then(() => {
+          // REDIRECCIÓN MANUAL SEGÚN ROL
+          if (esAdminReal) {
+            navigate("/home");
+          } else {
+            navigate("/inicio-usuario");
+          }
         });
       }
     } catch (err) {
-      // --- CAPTURA DE ERRORES MEJORADA ---
       let mensajeError = "Ocurrió un error inesperado";
 
       if (err.response) {
-        // Errores de validación (campos vacíos, formato mal hecho)
+        // Errores de validación (422)
         if (err.response.status === 422) {
           const errores = err.response.data.errors;
-          mensajeError = Object.values(errores)[0][0]; // Toma el primer error de la lista
+          mensajeError = Object.values(errores)[0][0];
         } 
         // Errores de credenciales (401) o Verificación (403)
         else if (err.response.data && err.response.data.mensaje) {
@@ -128,9 +139,12 @@ export default function Login({ onLoginSuccess }) {
         </form>
 
         <div className="login-footer">
+          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
           <p>¿No tienes una cuenta registrada?</p>
           <Link to="/register" className="link-register">Regístrate aquí</Link>
         </div>
+
+      
       </div>
     </div>
   );

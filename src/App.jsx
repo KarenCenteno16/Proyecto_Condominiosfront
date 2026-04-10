@@ -2,9 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Layout from "./components/Layout";
 
-// imports de páginas - asegúrate de que las rutas de archivo sean correctas
+// Imports de páginas
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword"; // Importado correctamente
 import Home from "./pages/Home";
 import Residentes from "./pages/Residentes";
 import Pagos from "./pages/Pagos";
@@ -17,13 +18,11 @@ import UserChat from "./pagesu/UserChat";
 import ReportesU from "./paginasusu/ReportesU";
 
 function App() {
-  // estado inicial verificando el localstorage
   const [auth, setAuth] = useState({
     isLogged: !!localStorage.getItem("token"),
     rol: localStorage.getItem("rol")
   });
 
-  // función para actualizar el estado cuando el usuario inicia o cierra sesión
   const refreshAuth = () => {
     setAuth({
       isLogged: !!localStorage.getItem("token"),
@@ -31,7 +30,6 @@ function App() {
     });
   };
 
-  // escucha cambios en el storage (útil para cuando el interceptor borra el token)
   useEffect(() => {
     const handleStorageChange = () => refreshAuth();
     window.addEventListener("storage", handleStorageChange);
@@ -43,7 +41,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ruta raíz: decide si mostrar login o mandar al home según el rol */}
         <Route 
           path="/" 
           element={
@@ -56,33 +53,29 @@ function App() {
         />
 
         <Route path="/register" element={<Register />} />
+        
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* rutas protegidas con layout (sidebar/navbar) */}
         <Route element={<Layout />}>
+          {/* Rutas de Administrador */}
+          <Route path="/home" element={auth.isLogged && esAdmin ? <Home /> : <Navigate to="/" replace />} />
+          <Route path="/residentes" element={auth.isLogged && esAdmin ? <Residentes /> : <Navigate to="/" replace />} />
+          <Route path="/pagos" element={auth.isLogged && esAdmin ? <Pagos /> : <Navigate to="/" replace />} />
+          <Route path="/accesos" element={auth.isLogged && esAdmin ? <Accesos /> : <Navigate to="/" replace />} />
+          <Route path="/asambleas" element={auth.isLogged && esAdmin ? <Asambleas /> : <Navigate to="/" replace />} />
+          <Route path="/reportes" element={auth.isLogged && esAdmin ? <Reportes /> : <Navigate to="/" replace />} />
           
-          {/* rutas exclusivas de administrador */}
-          <Route path="/home" element={auth.isLogged && esAdmin ? <Home /> : <Navigate to="/" />} />
-          <Route path="/residentes" element={auth.isLogged && esAdmin ? <Residentes /> : <Navigate to="/" />} />
-          <Route path="/pagos" element={auth.isLogged && esAdmin ? <Pagos /> : <Navigate to="/" />} />
-          <Route path="/accesos" element={auth.isLogged && esAdmin ? <Accesos /> : <Navigate to="/" />} />
-          <Route path="/asambleas" element={auth.isLogged && esAdmin ? <Asambleas /> : <Navigate to="/" />} />
-          <Route path="/reportes" element={auth.isLogged && esAdmin ? <Reportes /> : <Navigate to="/" />} />
+          {/* Rutas de Residente */}
+          <Route path="/inicio-usuario" element={auth.isLogged && !esAdmin ? <InicioU /> : <Navigate to="/" replace />} />
+          <Route path="/reportes-usuario" element={auth.isLogged && !esAdmin ? <ReportesU /> : <Navigate to="/" replace />} />
           
-          {/* rutas exclusivas de usuario residente */}
-          <Route path="/inicio-usuario" element={auth.isLogged && !esAdmin ? <InicioU /> : <Navigate to="/" />} />
-          <Route path="/reportes-usuario" element={auth.isLogged && !esAdmin ? <ReportesU /> : <Navigate to="/" />} />
-          
-          {/* rutas comunes o dinámicas (chat) */}
+          {/* Chat */}
           <Route 
             path="/chat" 
-            element={
-              auth.isLogged ? (esAdmin ? <ChatAdmin /> : <UserChat />) : <Navigate to="/" />
-            } 
+            element={auth.isLogged ? (esAdmin ? <ChatAdmin /> : <UserChat />) : <Navigate to="/" replace />} 
           />
-          
         </Route>
 
-        {/* redirección por defecto para rutas no existentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
