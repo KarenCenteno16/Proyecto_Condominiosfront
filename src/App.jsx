@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Layout from "./components/Layout";
 
-// Páginas de Administrador
+// imports de páginas - asegúrate de que las rutas de archivo sean correctas
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -12,19 +12,18 @@ import ChatAdmin from "./pages/Chat";
 import Accesos from "./pages/Accesos";
 import Asambleas from "./pages/Asambleas"; 
 import Reportes from "./pages/Reportes";
-
-// Páginas de Usuario
 import InicioU from "./pagesu/InicioU"; 
 import UserChat from "./pagesu/UserChat";
 import ReportesU from "./paginasusu/ReportesU";
 
 function App() {
+  // estado inicial verificando el localstorage
   const [auth, setAuth] = useState({
     isLogged: !!localStorage.getItem("token"),
     rol: localStorage.getItem("rol")
   });
 
-  // Función para forzar la actualización del estado de autenticación
+  // función para actualizar el estado cuando el usuario inicia o cierra sesión
   const refreshAuth = () => {
     setAuth({
       isLogged: !!localStorage.getItem("token"),
@@ -32,6 +31,7 @@ function App() {
     });
   };
 
+  // escucha cambios en el storage (útil para cuando el interceptor borra el token)
   useEffect(() => {
     const handleStorageChange = () => refreshAuth();
     window.addEventListener("storage", handleStorageChange);
@@ -43,7 +43,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* LOGIN: Le pasamos la función refreshAuth como prop */}
+        {/* ruta raíz: decide si mostrar login o mandar al home según el rol */}
         <Route 
           path="/" 
           element={
@@ -55,38 +55,34 @@ function App() {
           } 
         />
 
-        <Route 
-          path="/register" 
-          element={auth.isLogged ? <Navigate to="/" replace /> : <Register />} 
-        />
+        <Route path="/register" element={<Register />} />
 
-        {/* RUTAS PROTEGIDAS */}
+        {/* rutas protegidas con layout (sidebar/navbar) */}
         <Route element={<Layout />}>
+          
+          {/* rutas exclusivas de administrador */}
+          <Route path="/home" element={auth.isLogged && esAdmin ? <Home /> : <Navigate to="/" />} />
+          <Route path="/residentes" element={auth.isLogged && esAdmin ? <Residentes /> : <Navigate to="/" />} />
+          <Route path="/pagos" element={auth.isLogged && esAdmin ? <Pagos /> : <Navigate to="/" />} />
+          <Route path="/accesos" element={auth.isLogged && esAdmin ? <Accesos /> : <Navigate to="/" />} />
+          <Route path="/asambleas" element={auth.isLogged && esAdmin ? <Asambleas /> : <Navigate to="/" />} />
+          <Route path="/reportes" element={auth.isLogged && esAdmin ? <Reportes /> : <Navigate to="/" />} />
+          
+          {/* rutas exclusivas de usuario residente */}
+          <Route path="/inicio-usuario" element={auth.isLogged && !esAdmin ? <InicioU /> : <Navigate to="/" />} />
+          <Route path="/reportes-usuario" element={auth.isLogged && !esAdmin ? <ReportesU /> : <Navigate to="/" />} />
+          
+          {/* rutas comunes o dinámicas (chat) */}
           <Route 
             path="/chat" 
-            element={esAdmin ? <ChatAdmin /> : <UserChat />} 
+            element={
+              auth.isLogged ? (esAdmin ? <ChatAdmin /> : <UserChat />) : <Navigate to="/" />
+            } 
           />
-
-          {esAdmin && (
-            <>
-              <Route path="/home" element={<Home />} />
-              <Route path="/residentes" element={<Residentes />} />
-              <Route path="/pagos" element={<Pagos />} />
-              <Route path="/accesos" element={<Accesos />} />
-              <Route path="/asambleas" element={<Asambleas />} /> 
-              <Route path="/reportes" element={<Reportes />} />
-            </>
-          )}
-
-          {!esAdmin && auth.isLogged && (
-            <>
-              <Route path="/inicio-usuario" element={<InicioU />} />
-              <Route path="/chat-usuario" element={<UserChat />} />
-              <Route path="/reportes-usuario" element={<ReportesU />} />
-            </>
-          )}
+          
         </Route>
 
+        {/* redirección por defecto para rutas no existentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

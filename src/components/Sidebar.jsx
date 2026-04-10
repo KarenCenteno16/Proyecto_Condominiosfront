@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { 
   Home, 
   Users, 
@@ -7,32 +8,28 @@ import {
   Menu, 
   Gavel, 
   ClipboardList, 
-  LogOut 
+  LogOut,
+  ShieldCheck // Icono para seguridad
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import ChangePasswordModal from "./ChangePasswordModal"; // Importamos el modal que creaste
 
 export default function Sidebar() {
   const location = useLocation();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Obtenemos el rol asegurándonos de limpiar espacios o nulos
   const rol = localStorage.getItem("rol")?.toLowerCase().trim();
   const esAdmin = rol === "admin";
 
   const handleLogout = () => {
-    // 1. Limpiamos todo el almacenamiento local
     localStorage.clear();
-
-    // 2. Desconectamos Echo si existe (importante para no dejar sockets abiertos)
     if (window.Echo) {
       console.log("Desconectando WebSockets...");
       window.Echo.disconnect();
     }
-
-    // 3. Redirección forzada al login (esto limpia el estado de App.jsx)
     window.location.href = "/";
   };
 
-  // Función para marcar el link como activo
   const activeClass = (path) => (location.pathname === path ? "active" : "");
 
   return (
@@ -42,7 +39,7 @@ export default function Sidebar() {
         <div className="sidebar-title">Gestión de Condominios</div>
       </div>
 
-      <nav className="menu-list">
+      <nav className="menu-list" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* HOME DINÁMICO */}
         <Link 
           to={esAdmin ? "/home" : "/inicio-usuario"} 
@@ -80,7 +77,7 @@ export default function Sidebar() {
           </>
         )}
 
-        {/* MENÚ PARA RESIDENTE (Usuario común) */}
+        {/* MENÚ PARA RESIDENTE */}
         {!esAdmin && (
           <>
             <Link 
@@ -99,12 +96,33 @@ export default function Sidebar() {
           </>
         )}
 
+        {/* --- OPCIÓN DE SEGURIDAD (BOTÓN PARA EL MODAL) --- */}
+        <button 
+          onClick={() => setIsModalOpen(true)} 
+          className="menu-item"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'inherit',
+            cursor: 'pointer',
+            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '12px 20px',
+            width: '100%',
+            fontFamily: 'inherit',
+            fontSize: 'inherit'
+          }}
+        >
+          <span className="menu-icon"><ShieldCheck size={18} /></span> Seguridad
+        </button>
+
         {/* BOTÓN DE CIERRE DE SESIÓN */}
         <button 
           onClick={handleLogout} 
           className="menu-item logout-btn" 
           style={{
-            marginTop: 'auto', // Empuja el botón al fondo si el sidebar es flex
+            marginTop: 'auto', 
             background: 'none', 
             border: 'none', 
             color: 'inherit', 
@@ -121,6 +139,12 @@ export default function Sidebar() {
           <span className="menu-icon"><LogOut size={18} /></span> Cerrar Sesión
         </button>
       </nav>
+
+      {/* COMPONENTE MODAL (Se activa al pulsar Seguridad) */}
+      <ChangePasswordModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </aside>
   );
 }

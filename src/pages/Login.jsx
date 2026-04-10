@@ -18,7 +18,7 @@ export default function Login({ onLoginSuccess }) {
       Swal.fire({
         icon: 'success',
         title: '¡Correo Verificado!',
-        text: 'Tu cuenta ha sido activada con éxito. Ya puedes iniciar sesión.',
+        text: 'Tu cuenta ha sido activada. Ya puedes iniciar sesión.',
         confirmButtonColor: '#3085d6'
       });
       navigate(location.pathname, { replace: true });
@@ -38,11 +38,10 @@ export default function Login({ onLoginSuccess }) {
       if (res.data.res) {
         const { usuario, token } = res.data;
         
-        // 1. Guardamos datos en Storage
         localStorage.setItem("token", token);
         localStorage.setItem("userId", usuario.id_persona);
 
-        // 2. Evaluamos el ROL de forma ultra-segura
+        // Lógica de rol
         const esAdminReal = 
           usuario.admin === true || 
           usuario.admin === 1 || 
@@ -54,7 +53,6 @@ export default function Login({ onLoginSuccess }) {
 
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        // 3. AVISAMOS A APP.JS PARA ACTUALIZAR EL ESTADO GLOBAL
         if (onLoginSuccess) onLoginSuccess();
 
         Swal.fire({
@@ -64,12 +62,31 @@ export default function Login({ onLoginSuccess }) {
           timer: 1500,
           showConfirmButton: false
         });
-        
-        // El Navigate se dispara automáticamente por la lógica de App.js al detectar isLogged
       }
     } catch (err) {
-      const mensaje = err.response?.data?.mensaje || "Credenciales incorrectas o correo no verificado";
-      Swal.fire("Error", mensaje, "error");
+      // --- CAPTURA DE ERRORES MEJORADA ---
+      let mensajeError = "Ocurrió un error inesperado";
+
+      if (err.response) {
+        // Errores de validación (campos vacíos, formato mal hecho)
+        if (err.response.status === 422) {
+          const errores = err.response.data.errors;
+          mensajeError = Object.values(errores)[0][0]; // Toma el primer error de la lista
+        } 
+        // Errores de credenciales (401) o Verificación (403)
+        else if (err.response.data && err.response.data.mensaje) {
+          mensajeError = err.response.data.mensaje;
+        }
+      } else {
+        mensajeError = "No se pudo conectar con el servidor";
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Error de acceso",
+        text: mensajeError,
+        confirmButtonColor: "#3085d6"
+      });
     } finally {
       setLoading(false);
     }
@@ -85,7 +102,8 @@ export default function Login({ onLoginSuccess }) {
           <div className="form-group">
             <label htmlFor="email">Correo Electrónico</label>
             <input 
-              type="email" id="email" 
+              type="email" 
+              id="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ejemplo@correo.com"
@@ -96,7 +114,8 @@ export default function Login({ onLoginSuccess }) {
           <div className="form-group">
             <label htmlFor="pass">Contraseña</label>
             <input 
-              type="password" id="pass" 
+              type="password" 
+              id="pass" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required 
